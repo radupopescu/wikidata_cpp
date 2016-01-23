@@ -1,0 +1,17 @@
+sudo: false
+
+language: cpp
+
+compiler:
+  - gcc
+  - clang
+
+notifications:
+  email:
+    on_success: never
+    on_failure: always
+
+before_script:
+    - "mkdir ${TRAVIS_BUILD_DIR}/build-{debug,opt}"
+
+script: ./travis_build.sh
