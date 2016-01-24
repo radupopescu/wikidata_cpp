@@ -15,3 +15,4 @@ before_script:
     - "mkdir ${TRAVIS_BUILD_DIR}/build-{debug,opt}"
 
 script: ./travis_build.sh
+
