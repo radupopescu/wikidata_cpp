@@ -14,7 +14,7 @@ notifications:
 
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install libboost-iostreams-dev
+  - sudo apt-get install -y libboost-iostreams-dev
 
 before_script:
     - "mkdir ${TRAVIS_BUILD_DIR}/build-{debug,opt}"
