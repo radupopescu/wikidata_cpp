@@ -43,18 +43,16 @@ int main(int argc, char** argv)
   int same = 0;
   int different = 0;
   for(std::string line; getline(streamer, line);) {
-    if (line[0] != ']') {
-      data::WikidataElement elem;
-      const bool ok = data::parseItem(languages, line, elem);
-      if (ok) {
-        if (count % 1000 == 0) {
-          io::logResult(count, elem.id);
-        }
-        if (processing::hasSameTitles(elem)) {
-          ++same;
-        } else {
-          ++different;
-        }
+    data::WikidataElement elem;
+    const bool ok = data::parseItem(languages, line, elem);
+    if (ok) {
+      if (count % 1000 == 0) {
+        io::logResult(count, elem.id);
+      }
+      if (processing::hasSameTitles(elem)) {
+        ++same;
+      } else {
+        ++different;
       }
     }
     ++count;
