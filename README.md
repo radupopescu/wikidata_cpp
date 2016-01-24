@@ -1,6 +1,6 @@
-# wikipdata_cpp - Process the Wikidata JSON dump with C++
+# wikidata_cpp - Process the Wikidata JSON dump with C++
 
-[![Build Status](https://travis-ci.org/radupopescu/wikipdata_cpp.svg?branch=master)](https://travis-ci.org/radupopescu/wikipdata_cpp)
+[![Build Status](https://travis-ci.org/radupopescu/wikidata_cpp.svg?branch=master)](https://travis-ci.org/radupopescu/wikidata_cpp)
 
 ## Overview
 
@@ -14,5 +14,5 @@ The contributors are listed in AUTHORS. This project uses the MPL v2 license, se
 
 ## Issues
 
-To report an issue, use the [wikipdata_cpp issue tracker](https://github.com/radupopescu/wikipdata_cpp/issues) at github.com.
+To report an issue, use the [wikidata_cpp issue tracker](https://github.com/radupopescu/wikidata_cpp/issues) at github.com.
 
