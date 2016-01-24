@@ -12,7 +12,6 @@
 #include "processing.h"
 #include "utils.h"
 
-#include <algorithm>
 #include <iostream>
 
 int main(int argc, char** argv)

@@ -9,6 +9,8 @@
 
 #include "processing.h"
 
+#include <algorithm>
+
 namespace processing {
 
 bool hasSameTitles(const data::WikidataElement& elem)
