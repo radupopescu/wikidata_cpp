@@ -5,7 +5,7 @@ set -ev
 cd $TRAVIS_BUILD_DIR
 echo "Current directory" `pwd`
 
-cd ../build-debug
+cd build-debug
 cmake -D CMAKE_BUILD_TYPE=Debug ../
 make
 
