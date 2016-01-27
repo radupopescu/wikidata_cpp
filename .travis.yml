@@ -7,11 +7,12 @@ addons:
         sources:
             - llvm-toolchain-precise
             - ubuntu-toolchain-r-test
+            - boost-latest
         packages:
             - clang-3.7
             - gcc-5
             - g++-5
-            - libboost-iostreams1.55-dev
+            - libboost-iostreams-dev
             - zlib
 
 compiler:
