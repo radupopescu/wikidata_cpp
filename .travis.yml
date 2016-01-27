@@ -12,7 +12,7 @@ addons:
             - clang-3.7
             - gcc-5
             - g++-5
-            - libboost-iostreams-dev
+            - libboost-iostreams1.55-dev
             - zlib
 
 compiler:
