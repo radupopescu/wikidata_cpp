@@ -1,3 +1,5 @@
+sudo: false
+
 language: cpp
 
 addons:
@@ -8,6 +10,7 @@ addons:
         packages:
             - clang-3.7
             - g++-5
+            - libboost-iostreams-dev
 
 compiler:
   - gcc
@@ -17,10 +20,6 @@ notifications:
   email:
     on_success: never
     on_failure: always
-
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libboost-iostreams-dev
 
 before_script:
     - "mkdir ${TRAVIS_BUILD_DIR}/build-{debug,opt}"
