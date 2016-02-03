@@ -11,7 +11,8 @@ flags = [
   '-Werror',
   '-std=c++11',
   '-I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1',
-  '-I/usr/local/include'
+  '-I/usr/local/include',
+  '-Isrc/'
 ]
 
 # Set this to the absolute path to the folder (NOT the file!) containing the
