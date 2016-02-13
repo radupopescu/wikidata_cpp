@@ -15,7 +15,6 @@ addons:
             - libboost-iostreams1.55-dev
             - zlib
             - libzmq-dev
-            - libsodium-dev
 
 compiler:
   - gcc
