@@ -2,6 +2,7 @@ TAGS
 GTAGS
 GPATH
 GRPATH
+GRTAGS
 build-*
 *.swp
 *.pyc
