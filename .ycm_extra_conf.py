@@ -9,9 +9,19 @@ flags = [
   '-Wall',
   '-Wextra',
   '-Werror',
-  '-std=c++11',
-  '-I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1',
-  '-I/usr/local/include',
+  '-std=c++14',
+  '-isystem',
+  '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1',
+  '-isystem',
+  '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/7.0.2/include',
+  '-isystem',
+  '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include',
+  '-isystem',
+  '/Library/Developer/CommandLineTools/usr/include/c++/v1',
+  '-isystem',
+  '/usr/local/include',
+  '-isystem',
+  '/usr/include',
   '-Isrc/'
 ]
 
