@@ -15,7 +15,7 @@ using json = nlohmann::json;
 
 namespace data {
 
-bool parseItem(const languages_t& languages, const std::string& line, WikidataElement& elem)
+bool parseItem(const Languages& languages, const std::string& line, WikidataElement& elem)
 {
   try {
     const auto j = json::parse(line.substr(0, line.size() - 1));

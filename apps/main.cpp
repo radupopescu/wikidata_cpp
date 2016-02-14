@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 
   const std::string fileName(argv[1]);
 
-  data::languages_t languages;
+  data::Languages languages;
   for (auto i = 2; i < argc; ++i) {
     languages.push_back(argv[i]);
   }

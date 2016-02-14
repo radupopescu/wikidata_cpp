@@ -17,7 +17,7 @@ bool hasSameTitles(const data::WikidataElement& elem)
 {
   const auto& title = elem.sites.begin()->second;
   return std::all_of(elem.sites.begin(), elem.sites.end(),
-                     [title](const data::site_map_t::value_type& p)
+                     [title](const data::SiteMap::value_type& p)
                      {
                        return title == p.second;
                      });

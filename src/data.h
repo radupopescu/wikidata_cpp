@@ -15,15 +15,15 @@
 
 namespace data {
 
-using languages_t = std::vector<std::string>;
-using site_map_t = std::unordered_map<std::string, std::string>;
+using Languages = std::vector<std::string>;
+using SiteMap = std::unordered_map<std::string, std::string>;
 
 struct WikidataElement
 {
   std::string id;
-  site_map_t sites;
+  SiteMap sites;
 };
 
-bool parseItem(const languages_t& languages, const std::string& line, WikidataElement& elem);
+bool parseItem(const Languages& languages, const std::string& line, WikidataElement& elem);
 
 }
