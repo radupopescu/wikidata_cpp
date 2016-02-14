@@ -15,9 +15,16 @@
 
 namespace io {
 
-using streamer_t = boost::iostreams::filtering_stream<boost::iostreams::input>;
+class Streamer {
+public:
+  Streamer(const std::string& fileName);
 
-void makeStreamer(std::ifstream& file, streamer_t& streamer, const std::string& fileName);
+  bool getLine(std::string& line);
+
+private:
+  std::ifstream file_;
+  boost::iostreams::filtering_stream<boost::iostreams::input> boostStreamer_;
+};
 
 void logResult(int n, const std::string& id);
 

@@ -15,13 +15,18 @@
 
 namespace io {
 
-void makeStreamer(std::ifstream& file, streamer_t& streamer, const std::string& fileName)
+Streamer::Streamer(const std::string& fileName)
+    : file_(fileName, std::ios_base::in | std::ios_base::binary)
 {
-  file.exceptions(std::ios::failbit | std::ios::badbit);
-  file.open(fileName, std::ios_base::in | std::ios_base::binary);
+  file_.exceptions(std::ios::failbit | std::ios::badbit);
 
-  streamer.push(boost::iostreams::gzip_decompressor());
-  streamer.push(file);
+  boostStreamer_.push(boost::iostreams::gzip_decompressor());
+  boostStreamer_.push(file_);
+}
+
+bool Streamer::getLine(std::string& line)
+{
+  return static_cast<bool>(getline(boostStreamer_, line));
 }
 
 void logResult(int n, const std::string& id)

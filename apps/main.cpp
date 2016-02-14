@@ -31,17 +31,15 @@ int main(int argc, char** argv)
 
   const auto t0 = utils::tick();
 
-  std::ifstream file;
-  io::streamer_t streamer;
-  io::makeStreamer(file, streamer, fileName);
+  io::Streamer streamer(fileName);
 
   std::string l;
-  getline(streamer, l); // Ignore first line "["
+  streamer.getLine(l); // Ignore first line "["
 
   int count = 0;
   int same = 0;
   int different = 0;
-  for(std::string line; getline(streamer, line);) {
+  for(std::string line; streamer.getLine(line);) {
     data::WikidataElement elem;
     const bool ok = data::parseItem(languages, line, elem);
     if (ok) {
