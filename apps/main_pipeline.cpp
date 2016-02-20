@@ -16,18 +16,44 @@
 
 #include <iostream>
 
+void streamerTask(const zmqpp::context_t& ctx,
+                  const zmqpp::endpoint_t& out,
+                  const zmqpp::endpoint_t& mon,
+                  const std::string& fileName)
+{
+  zmqpp::socket_t output(ctx, zmqpp::socket_type::push);
+  output.set(zmqpp::socket_option::linger, 1000);
+  output.bind(out);
+
+  zmqpp::socket_t monitor(ctx, zmqpp::socket_type::push);
+  monitor.set(zmqpp::socket_option::linger, 1000);
+  monitor.connect(mon);
+
+  int numLinesRead = 0;
+  io::Streamer streamer(fileName);
+  for(std::string line; streamer.getLine(line);) {
+    output.send(line);
+    ++numLinesRead;
+  }
+
+  output.send("end");
+  zmqpp::message_t endMsg;
+  endMsg << numLinesRead;
+  monitor.send(endMsg);
+}
+
 void workerTask(const zmqpp::context_t& ctx,
-                const zmqpp::endpoint_t& inPoint,
-                const zmqpp::endpoint_t& outPoint,
+                const zmqpp::endpoint_t& in,
+                const zmqpp::endpoint_t& out,
                 const data::Languages& languages)
 {
   zmqpp::socket_t input(ctx, zmqpp::socket_type::pull);
   input.set(zmqpp::socket_option::linger, 1000);
-  input.connect(inPoint);
+  input.connect(in);
 
   zmqpp::socket_t output(ctx, zmqpp::socket_type::push);
   output.set(zmqpp::socket_option::linger, 1000);
-  output.connect(outPoint);
+  output.connect(out);
 
   while (true) {
     zmqpp::message_t inMsg;
@@ -47,35 +73,10 @@ void workerTask(const zmqpp::context_t& ctx,
       } else {
         output.send("diff");
       }
+    } else {
+      output.send("inv");
     }
   }
-}
-
-void counterTask(const zmqpp::context_t& ctx,
-                 const zmqpp::endpoint_t& inPoint)
-{
-  zmqpp::socket_t input(ctx, zmqpp::socket_type::pull);
-  input.set(zmqpp::socket_option::linger, 1000);
-  input.bind(inPoint);
-
-  int same = 0;
-  int different = 0;
-
-  while (true) {
-    zmqpp::message_t msg;
-    input.receive(msg);
-    std::string msgText;
-    msg >> msgText;
-    if (msgText.compare("end") == 0) {
-      break;
-    } else if (msgText.compare("same") == 0) {
-      ++same;
-    } else if (msgText.compare("diff") == 0) {
-      ++different;
-    }
-  }
-
-  io::printResults(same, different, 0.0);
 }
 
 int main(int argc, char** argv)
@@ -89,7 +90,6 @@ int main(int argc, char** argv)
   }
 
   const std::string fileName(argv[1]);
-
   const int numWorkers = std::atoi(argv[2]);
 
   data::Languages languages;
@@ -99,23 +99,52 @@ int main(int argc, char** argv)
 
   const auto t0 = utils::tick();
 
-  io::Streamer streamer(fileName);
-
   zmqpp::context_t context;
 
-  const zmqpp::endpoint_t streamerAddress("inproc://streamer");
-  const zmqpp::endpoint_t workerAddress("inproc://worker");
+  // Counter
   const zmqpp::endpoint_t counterAddress("inproc://counter");
+  zmqpp::socket_t counter(context, zmqpp::socket_type::pull);
+  counter.set(zmqpp::socket_option::linger, 1000);
+  counter.bind(counterAddress);
 
-  zmqpp::socket_t pipelineIn(context, zmqpp::socket_type::push);
-  pipelineIn.set(zmqpp::socket_option::linger, 1000);
-  pipelineIn.bind(workerAddress);
+  int numLinesRead = 0;
+  int numLinesProcessed = 0;
+  int same = 0;
+  int different = 0;
+  auto counterCallback = [&same, &different, &numLinesRead, &numLinesProcessed, &counter] () {
+    zmqpp::message_t msg;
+    counter.receive(msg);
+    std::string msgText;
+    msg >> msgText;
+    if (msgText.compare("same") == 0) {
+      ++same;
+    } else if (msgText.compare("diff") == 0) {
+      ++different;
+    }
+    // Message is "inv" - just count line
+    ++numLinesProcessed;
+  };
 
-  zmqpp::socket_t collectorIn(context, zmqpp::socket_type::push);
-  collectorIn.connect(counterAddress);
+  // Monitor
+  const zmqpp::endpoint_t monitorAddress("inproc://monitor");
+  zmqpp::socket_t monitor(context, zmqpp::socket_type::pull);
+  monitor.set(zmqpp::socket_option::linger, 1000);
+  monitor.bind(monitorAddress);
 
-  auto collector = std::thread([&context, counterAddress] () { counterTask(context, counterAddress); });
+  bool streamingComplete = false;
+  auto streamingCompleteCallback = [&numLinesRead, &streamingComplete, &monitor] () {
+    zmqpp::message_t msg;
+    monitor.receive(msg);
+    msg >> numLinesRead;
+    streamingComplete = true;
+  };
 
+  // Reactor
+  zmqpp::reactor mainReactor;
+  mainReactor.add(counter, counterCallback);
+  mainReactor.add(monitor, streamingCompleteCallback);
+
+  const zmqpp::endpoint_t workerAddress("inproc://worker");
   std::vector<std::thread> workers;
   for (int i = 0; i < numWorkers; ++i) {
     workers.push_back(std::thread([&context, workerAddress, counterAddress, languages] () {
@@ -123,21 +152,25 @@ int main(int argc, char** argv)
         }));
   }
 
-  for(std::string line; streamer.getLine(line);) {
-    pipelineIn.send(line);
+  // Streamer
+  auto streamer = std::thread([&context, workerAddress, monitorAddress, fileName] ()
+                              {
+                                streamerTask(context, workerAddress, monitorAddress, fileName);
+                              });
+
+  // Reactor loop
+  while (!streamingComplete || (numLinesProcessed < numLinesRead)) {
+    mainReactor.poll();
   }
 
-  pipelineIn.send("end");
-
+  // Cleanup
+  streamer.join();
   for (auto& w : workers) {
     w.join();
   }
 
-  collectorIn.send("end");
-  collector.join();
-
   const auto t1 = utils::tick();
-  std::cout << "Time = " << utils::tock(t1, t0) << std::endl;
+  io::printResults(same, different, utils::tock(t1, t0));
 
   return 0;
 }
