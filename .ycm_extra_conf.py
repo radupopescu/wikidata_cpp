@@ -22,7 +22,8 @@ flags = [
   '/usr/local/include',
   '-isystem',
   '/usr/include',
-  '-Isrc/'
+  '-Isrc',
+  '-Iexternal'
 ]
 
 # Set this to the absolute path to the folder (NOT the file!) containing the
