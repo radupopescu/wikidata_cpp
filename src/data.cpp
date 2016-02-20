@@ -9,7 +9,7 @@
 
 #include "data.h"
 
-#include <rapidjson/Document.h>
+#include <rapidjson/document.h>
 
 #include <iostream>
 
