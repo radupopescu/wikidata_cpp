@@ -33,9 +33,6 @@ int main(int argc, char** argv)
 
   io::Streamer streamer(fileName);
 
-  std::string l;
-  streamer.getLine(l); // Ignore first line "["
-
   int count = 0;
   int same = 0;
   int different = 0;
