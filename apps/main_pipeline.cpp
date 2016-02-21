@@ -9,84 +9,13 @@
 
 #include "data.h"
 #include "io.h"
+#include "pipeline.h"
 #include "processing.h"
 #include "utils.h"
 
 #include <zmqpp/zmqpp.hpp>
 
 #include <iostream>
-
-void streamerTask(const zmqpp::context& ctx,
-                  const zmqpp::endpoint_t& out,
-                  const zmqpp::endpoint_t& mon,
-                  const std::string& fileName)
-{
-  zmqpp::socket output(ctx, zmqpp::socket_type::push);
-  output.set(zmqpp::socket_option::linger, 1000);
-  output.bind(out);
-
-  zmqpp::socket monitor(ctx, zmqpp::socket_type::push);
-  monitor.set(zmqpp::socket_option::linger, 1000);
-  monitor.connect(mon);
-
-  int numLinesRead = 0;
-  io::Streamer streamer(fileName);
-  for(std::string line; streamer.getLine(line);) {
-    output.send(line);
-    ++numLinesRead;
-  }
-
-  zmqpp::message endMsg;
-  endMsg << numLinesRead;
-  monitor.send(endMsg);
-}
-
-void workerTask(const zmqpp::context& ctx,
-                const zmqpp::endpoint_t& in,
-                const zmqpp::endpoint_t& out,
-                const zmqpp::endpoint_t& bcast,
-                const data::Languages& languages)
-{
-  zmqpp::socket input(ctx, zmqpp::socket_type::pull);
-  input.set(zmqpp::socket_option::linger, 1000);
-  input.connect(in);
-
-  zmqpp::socket output(ctx, zmqpp::socket_type::push);
-  output.set(zmqpp::socket_option::linger, 1000);
-  output.connect(out);
-
-  zmqpp::socket kill(ctx, zmqpp::socket_type::sub);
-  kill.set(zmqpp::socket_option::subscribe, "KILL");
-  kill.connect(bcast);
-
-  bool canContinue = true;
-  zmqpp::reactor reactor;
-  reactor.add(input, [&input, &output, &languages] () {
-      zmqpp::message inMsg;
-      input.receive(inMsg);
-      std::string msgText;
-      inMsg >> msgText;
-
-      data::WikidataElement elem;
-      const bool ok = data::parseItem(languages, msgText, elem);
-      if (ok) {
-        if (processing::hasSameTitles(elem)) {
-          output.send("same");
-        } else {
-          output.send("diff");
-        }
-      } else {
-        output.send("inv");
-      }
-    });
-  reactor.add(kill, [&canContinue] () {
-      canContinue = false;
-    });
-
-  while (canContinue) {
-    reactor.poll(1);
-  }
-}
 
 int main(int argc, char** argv)
 {
@@ -109,20 +38,21 @@ int main(int argc, char** argv)
   const auto t0 = utils::tick();
 
   zmqpp::context context;
+  zmqpp::reactor mainReactor;
 
-  // Counter
-  const zmqpp::endpoint_t counterAddress("inproc://counter");
-  zmqpp::socket counter(context, zmqpp::socket_type::pull);
-  counter.set(zmqpp::socket_option::linger, 1000);
-  counter.bind(counterAddress);
+  // Collector
+  const zmqpp::endpoint_t collectorAddress("inproc://collector");
+  zmqpp::socket collector(context, zmqpp::socket_type::pull);
+  collector.set(zmqpp::socket_option::linger, 1000);
+  collector.bind(collectorAddress);
 
   int numLinesRead = 0;
   int numLinesProcessed = 0;
   int same = 0;
   int different = 0;
-  auto counterCallback = [&same, &different, &numLinesRead, &numLinesProcessed, &counter] () {
+  mainReactor.add(collector, [&same, &different, &numLinesRead, &numLinesProcessed, &collector] () {
     zmqpp::message msg;
-    counter.receive(msg);
+    collector.receive(msg);
     std::string msgText;
     msg >> msgText;
     if (msgText.compare("same") == 0) {
@@ -132,7 +62,7 @@ int main(int argc, char** argv)
     }
     // Message is "inv" - just count line
     ++numLinesProcessed;
-  };
+    });
 
   // Monitor
   const zmqpp::endpoint_t killAddress("inproc://kill");
@@ -145,31 +75,26 @@ int main(int argc, char** argv)
   monitor.bind(monitorAddress);
 
   bool streamingComplete = false;
-  auto streamingCompleteCallback = [&numLinesRead, &streamingComplete, &monitor] () {
+  mainReactor.add(monitor, [&numLinesRead, &streamingComplete, &monitor] () {
     zmqpp::message msg;
     monitor.receive(msg);
     msg >> numLinesRead;
     streamingComplete = true;
-  };
-
-  // Reactor
-  zmqpp::reactor mainReactor;
-  mainReactor.add(counter, counterCallback);
-  mainReactor.add(monitor, streamingCompleteCallback);
+  });
 
   // Workers
   const auto workerAddress("inproc://worker");
   std::vector<std::thread> workers;
   for (int i = 0; i < numWorkers; ++i) {
-    workers.push_back(std::thread([&context, workerAddress, counterAddress, killAddress, languages] () {
-          workerTask(context, workerAddress, counterAddress, killAddress, languages);
+    workers.push_back(std::thread([&context, workerAddress, collectorAddress, killAddress, languages] () {
+          pipeline::workerTask(context, workerAddress, collectorAddress, killAddress, languages);
         }));
   }
 
   // Streamer
   auto streamer = std::thread([&context, workerAddress, monitorAddress, fileName] ()
                               {
-                                streamerTask(context, workerAddress, monitorAddress, fileName);
+                                pipeline::streamerTask(context, workerAddress, monitorAddress, fileName);
                               });
 
   // Reactor loop
@@ -179,7 +104,7 @@ int main(int argc, char** argv)
 
   // Send kill signal
   zmqpp::message killMsg;
-  killMsg << "KILL" << "Kill!!!";
+  killMsg << "Notifications" << "Kill!!!";
   killBroadcast.send(killMsg);
 
   // Cleanup
