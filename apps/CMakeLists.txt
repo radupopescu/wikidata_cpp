@@ -10,7 +10,3 @@ set(main_pipeline_sources main_pipeline.cpp)
 add_executable(${PROJECT_NAME_LOWER}_pipeline ${main_pipeline_sources})
 target_link_libraries(${PROJECT_NAME_LOWER}_pipeline ${PROJECT_NAME_LOWER} ${Boost_LIBRARIES} ${ZMQPP_LIBRARIES} ${ZEROMQ_LIBRARIES})
 
-# Pipeline playground
-set(pipeline_sources pipeline.cpp)
-add_executable(pipeline ${pipeline_sources})
-target_link_libraries(pipeline ${PROJECT_NAME_LOWER} ${Boost_LIBRARIES} ${ZMQPP_LIBRARIES} ${ZEROMQ_LIBRARIES})
