@@ -20,9 +20,8 @@
 int main(int argc, char** argv)
 {
   if (argc < 4) {
-    std::cout <<
-        "Usage: ./wikidata_cpp_main <WIKIDUMP_JSON_FILE> <NUM_WORKERS> "
-        "<LANGUAGE 1> <LANGUAGE 2> ... <LANGUAGE N>"
+    std::cout << "Usage: ./wikidata_cpp_main <WIKIDUMP_JSON_FILE> <NUM_WORKERS> "
+                 "<LANGUAGE 1> <LANGUAGE 2> ... <LANGUAGE N>"
               << std::endl;
     return 1;
   }
@@ -50,7 +49,7 @@ int main(int argc, char** argv)
   int numLinesProcessed = 0;
   int same = 0;
   int different = 0;
-  mainReactor.add(collector, [&same, &different, &numLinesRead, &numLinesProcessed, &collector] () {
+  mainReactor.add(collector, [&same, &different, &numLinesRead, &numLinesProcessed, &collector]() {
     zmqpp::message msg;
     collector.receive(msg);
     std::string msgText;
@@ -62,7 +61,7 @@ int main(int argc, char** argv)
     }
     // Message is "inv" - just count line
     ++numLinesProcessed;
-    });
+  });
 
   // Monitor
   const zmqpp::endpoint_t killAddress("inproc://kill");
@@ -75,7 +74,7 @@ int main(int argc, char** argv)
   monitor.bind(monitorAddress);
 
   bool streamingComplete = false;
-  mainReactor.add(monitor, [&numLinesRead, &streamingComplete, &monitor] () {
+  mainReactor.add(monitor, [&numLinesRead, &streamingComplete, &monitor]() {
     zmqpp::message msg;
     monitor.receive(msg);
     msg >> numLinesRead;
@@ -92,10 +91,9 @@ int main(int argc, char** argv)
   }
 
   // Streamer
-  auto streamer = std::thread([&context, workerAddress, monitorAddress, fileName] ()
-                              {
-                                pipeline::streamerTask(context, workerAddress, monitorAddress, fileName);
-                              });
+  auto streamer = std::thread([&context, workerAddress, monitorAddress, fileName]() {
+    pipeline::streamerTask(context, workerAddress, monitorAddress, fileName);
+  });
 
   // Reactor loop
   while (!streamingComplete || (numLinesProcessed < numLinesRead)) {
@@ -104,7 +102,8 @@ int main(int argc, char** argv)
 
   // Send kill signal
   zmqpp::message killMsg;
-  killMsg << "Notifications" << "Kill!!!";
+  killMsg << "Notifications"
+          << "Kill!!!";
   killBroadcast.send(killMsg);
 
   // Cleanup
