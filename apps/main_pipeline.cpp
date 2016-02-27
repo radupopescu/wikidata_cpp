@@ -85,9 +85,9 @@ int main(int argc, char** argv)
   const auto workerAddress("inproc://worker");
   std::vector<std::thread> workers;
   for (int i = 0; i < numWorkers; ++i) {
-    workers.push_back(std::thread([&context, workerAddress, collectorAddress, killAddress, languages] () {
-          pipeline::workerTask(context, workerAddress, collectorAddress, killAddress, languages);
-        }));
+    workers.emplace_back([&context, workerAddress, collectorAddress, killAddress, languages]() {
+      pipeline::workerTask(context, workerAddress, collectorAddress, killAddress, languages);
+    });
   }
 
   // Streamer
