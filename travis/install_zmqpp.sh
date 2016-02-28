@@ -4,6 +4,7 @@ set -e
 
 git clone https://github.com/zeromq/libzmq.git
 cd libzmq
+./autogen.sh
 ./configure --prefix=$HOME/zmq
 make
 make install
