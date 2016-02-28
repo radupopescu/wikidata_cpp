@@ -1,7 +1,5 @@
 # wikidata_cpp - Process the Wikidata JSON dump with C++
 
-[![Build Status](https://travis-ci.org/radupopescu/wikidata_cpp.svg?branch=master)](https://travis-ci.org/radupopescu/wikidata_cpp)
-
 ## Overview
 
 This experiment is inspired by this blog post
