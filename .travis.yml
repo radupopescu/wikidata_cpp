@@ -14,7 +14,6 @@ addons:
             - g++-5
             - libboost-iostreams1.55-dev
             - zlib
-            - libzmq-dev
 
 compiler:
   - gcc

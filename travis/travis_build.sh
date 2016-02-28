@@ -8,16 +8,20 @@ echo "Current directory" `pwd`
 cd build-debug
 cmake \
     -D CMAKE_BUILD_TYPE=Debug \
-    -D ZMQPP_INCLUDE_DIRS=$HOME/zmqpp/include \
-    -D ZMQPP_LIBRARY_DIRS=$HOME/zmqpp/lib \
+    -D ZEROMQ_INCLUDE_DIRS=$HOME/zmq/include \
+    -D ZEROMQ_LIBRARY_DIRS=$HOME/zmq/lib \
+    -D ZMQPP_INCLUDE_DIRS=$HOME/zmq/include \
+    -D ZMQPP_LIBRARY_DIRS=$HOME/zmq/lib \
     ../
 make
 
 cd ../build-opt
 cmake \
     -D CMAKE_BUILD_TYPE=Release \
-    -D ZMQPP_INCLUDE_DIRS=$HOME/zmqpp/include \
-    -D ZMQPP_LIBRARY_DIRS=$HOME/zmqpp/lib \
+    -D ZEROMQ_INCLUDE_DIRS=$HOME/zmq/include \
+    -D ZEROMQ_LIBRARY_DIRS=$HOME/zmq/lib \
+    -D ZMQPP_INCLUDE_DIRS=$HOME/zmq/include \
+    -D ZMQPP_LIBRARY_DIRS=$HOME/zmq/lib \
     ../
 make
 
