@@ -81,12 +81,19 @@ int main(int argc, char** argv)
     streamingComplete = true;
   });
 
+  // Logger
+  const int loggingInterval = 1000;
+  const auto loggerAddress("inproc://logger");
+  auto logger = std::thread([&context, loggerAddress, killAddress, loggingInterval]() {
+    pipeline::loggerTask(context, loggerAddress, killAddress, loggingInterval);
+  });
+
   // Workers
   const auto workerAddress("inproc://worker");
   std::vector<std::thread> workers;
   for (int i = 0; i < numWorkers; ++i) {
-    workers.emplace_back([&context, workerAddress, collectorAddress, killAddress, languages]() {
-      pipeline::workerTask(context, workerAddress, collectorAddress, killAddress, languages);
+    workers.emplace_back([&context, workerAddress, collectorAddress, killAddress, loggerAddress, languages]() {
+      pipeline::workerTask(context, workerAddress, collectorAddress, killAddress, loggerAddress, languages);
     });
   }
 
@@ -111,6 +118,7 @@ int main(int argc, char** argv)
   for (auto& w : workers) {
     w.join();
   }
+  logger.join();
 
   const auto t1 = utils::tick();
   io::printResults(same, different, utils::tock(t1, t0));

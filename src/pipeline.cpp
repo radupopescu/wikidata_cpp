@@ -37,6 +37,7 @@ void workerTask(const zmqpp::context& ctx,
                 const zmqpp::endpoint_t& in,
                 const zmqpp::endpoint_t& out,
                 const zmqpp::endpoint_t& notifications,
+                const zmqpp::endpoint_t& logging,
                 const data::Languages& languages)
 {
   zmqpp::socket input(ctx, zmqpp::socket_type::pull);
@@ -51,9 +52,12 @@ void workerTask(const zmqpp::context& ctx,
   kill.set(zmqpp::socket_option::subscribe, "Notifications");
   kill.connect(notifications);
 
+  zmqpp::socket logger(ctx, zmqpp::socket_type::pub);
+  logger.connect(logging);
+
   bool canContinue = true;
   zmqpp::reactor reactor;
-  reactor.add(input, [&input, &output, &languages] () {
+  reactor.add(input, [&input, &output, &logger, &languages] () {
       zmqpp::message inMsg;
       input.receive(inMsg);
       std::string msgText;
@@ -62,6 +66,9 @@ void workerTask(const zmqpp::context& ctx,
       data::WikidataElement elem;
       const bool ok = data::parseItem(languages, msgText, elem);
       if (ok) {
+        zmqpp::message logMsg;
+        logMsg << "Logging" << elem.id;
+        logger.send(logMsg);
         if (processing::hasSameTitles(elem)) {
           output.send("same");
         } else {
@@ -74,6 +81,44 @@ void workerTask(const zmqpp::context& ctx,
   reactor.add(kill, [&canContinue] () {
       canContinue = false;
     });
+
+  while (canContinue) {
+    reactor.poll(1);
+  }
+}
+
+void loggerTask(const zmqpp::context& ctx,
+                const zmqpp::endpoint_t& logging,
+                const zmqpp::endpoint_t& notifications,
+                const int loggingInterval)
+{
+  zmqpp::socket logger(ctx, zmqpp::socket_type::sub);
+  logger.set(zmqpp::socket_option::subscribe, "Logging");
+  logger.bind(logging);
+
+  zmqpp::socket kill(ctx, zmqpp::socket_type::sub);
+  kill.set(zmqpp::socket_option::subscribe, "Notifications");
+  kill.connect(notifications);
+
+  int index = 0;
+  bool canContinue = true;
+  zmqpp::reactor reactor;
+  reactor.add(logger, [&logger, &index, loggingInterval] ()
+  {
+    zmqpp::message msg;
+    logger.receive(msg);
+    if (index % loggingInterval == 0) {
+      std::string topic;
+      std::string text;
+      msg >> topic >> text;
+      std::cout << text << std::endl;
+    }
+    ++index;
+  });
+  reactor.add(kill, [&canContinue] ()
+  {
+    canContinue = false;
+  });
 
   while (canContinue) {
     reactor.poll(1);
