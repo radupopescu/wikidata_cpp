@@ -17,8 +17,8 @@ mkdir build
 cd build
 cmake \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_COMPILER=clang \
-    -DCMAKE_CXX_COMPILER=clang++ \
+    # -DCMAKE_C_COMPILER=clang \
+    # -DCMAKE_CXX_COMPILER=clang++ \
     -DCMAKE_PREFIX_PATH=$HOME/zmq \
     -DCMAKE_INSTALL_PREFIX=$HOME/zmq \
     -DZMQPP_BUILD_STATIC=OFF \
